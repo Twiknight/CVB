@@ -1,8 +1,12 @@
-import { allPass, propEq, complement, merge } from 'ramda'
+import {
+  allPass,
+  propEq,
+  complement,
+  merge,
+  omit } from 'ramda'
 
-import { isCircleLike } from '../../circle/circle'
-import { warn } from '../../utils/log'
-import create from './create-element'
+import { isCircleLike } from '../circle/circle'
+import { warn } from '../utils/log'
 
 const isCircle = allPass([ isCircleLike, propEq('type', 'circle') ])
 const isNotCircle = complement(isCircle)
@@ -15,13 +19,13 @@ export default function (circle) {
   if (isNotCircle(circle)) {
     warnNotCircle(circle.type)
   } else {
-    const baseAttrs = {
-      cx: circle.cx,
-      cy: circle.cy,
-      r: circle.r
-    }
+    const baseAttrs = omit(['type', 'attrs'], circle)
 
     const attrs = merge(circle.attrs, baseAttrs)
-    return create('circle', attrs, [])
+    return {
+      tag: 'circle',
+      attrs,
+      children: []
+    }
   }
 }

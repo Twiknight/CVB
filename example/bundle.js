@@ -64,9 +64,110 @@
 
   const createDefault = () => __proto__;
 
+  const isCircle = ramda.allPass([isCircleLike, ramda.propEq('type', 'circle')]);
+  const isNotCircle = ramda.complement(isCircle);
+
+  const warnNotCircle = function (type) {
+    warn(`Render.circle: expects to accept a Circle but got ${ type }`);
+  };
+
+  function portCircle (circle) {
+    if (isNotCircle(circle)) {
+      warnNotCircle(circle.type);
+    } else {
+      const baseAttrs = ramda.omit(['type', 'attrs'], circle);
+
+      const attrs = ramda.merge(circle.attrs, baseAttrs);
+      return {
+        tag: 'circle',
+        attrs,
+        children: []
+      };
+    }
+  }
+
+  const fallbackWithMsg = ramda.curry(function (validator, msg, ...args) {
+    if (!validator(args[0])) {
+      warn(msg);
+    }
+    return ramda.find(validator)(args);
+  });
+
+  const __proto__$1 = {
+    type: 'line',
+    x1: 0,
+    x2: 0,
+    x3: 0,
+    x4: 0,
+    attrs: {
+      stroke: 'black'
+    }
+  };
+
+  const isLineLike = function (obj) {
+    const checkItems = ['x1', 'x2', 'y1', 'y2'];
+    const predicates = ramda.map(ramda.propSatisfies(isValidNumber), checkItems);
+    return ramda.allPass(predicates)(obj);
+  };
+
+  const createWithProto$1 = ramda.curry(function (proto, attrs, x1, y1, x2, y2) {
+    const msg = ramda.curry(function (type, key, value) {
+      return 'line.createWithProto: ' + `expects ${ key } to be ${ type }, ` + `but got ${ key } = ${ value }`;
+    });
+    const posMsg = msg('number');
+    const fallbackPos = fallbackWithMsg(isValidNumber);
+
+    const _x1 = fallbackPos(posMsg('x1', x1), x1, proto.x1, __proto__$1.x1);
+    const _y1 = fallbackPos(posMsg('y1', y1), y1, proto.y1, __proto__$1.y1);
+    const _x2 = fallbackPos(posMsg('x2', x2), x2, proto.x2, __proto__$1.x2);
+    const _y2 = fallbackPos(posMsg('y2', y2), y2, proto.y2, __proto__$1.y2);
+    const _attrs = ramda.merge(proto.attrs, attrs);
+
+    return {
+      type: 'line',
+      x1: _x1,
+      y1: _y1,
+      x2: _x2,
+      y2: _y2,
+      attrs: _attrs
+    };
+  });
+
+  const create$1 = createWithProto$1(__proto__$1);
+  const createDefault$1 = () => __proto__$1;
+
+  const getLength = function (line) {
+    if (!isLineLike(line)) {
+      warn(`line.getLength: cannot calculate length of non-LineLike ${ line }`);
+      return NaN;
+    }
+    return Math.sqrt(Math.pow(line.x1 - line.x2, 2) + Math.pow(line.y1 - line.y2, 2));
+  };
+
+  const isLine = ramda.allPass([isLineLike, ramda.propEq('type', 'line')]);
+  const isNotLine = ramda.complement(isLine);
+
+  const warnNotLine = function (obj) {
+    warn(`Render.line: can't render a non-line object ${ obj }`);
+  };
+
+  function portLine (line) {
+    if (isNotLine(line)) {
+      warnNotLine(line);
+    } else {
+      const baseAttrs = ramda.omit(['type', 'attrs'], line);
+      return {
+        tag: 'line',
+        attrs: ramda.merge(line.attrs, baseAttrs),
+        children: []
+      };
+    }
+  }
+
   const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 
-  function createElement(tag, attrs = {}, children = []) {
+  function createElement(node) {
+    const { tag, attrs, children } = node;
     // create element
     let elm = document.createElementNS(SVG_NAMESPACE, tag);
 
@@ -81,32 +182,11 @@
 
     // append children
     const append = function (child) {
-      elm.appendChild(child);
+      elm.appendChild(createElement(child));
     };
     ramda.forEach(append, children);
+
     return elm;
-  }
-
-  const isCircle = ramda.allPass([isCircleLike, ramda.propEq('type', 'circle')]);
-  const isNotCircle = ramda.complement(isCircle);
-
-  const warnNotCircle = function (type) {
-    warn(`Render.circle: expects to accept a Circle but got ${ type }`);
-  };
-
-  function render (circle) {
-    if (isNotCircle(circle)) {
-      warnNotCircle(circle.type);
-    } else {
-      const baseAttrs = {
-        cx: circle.cx,
-        cy: circle.cy,
-        r: circle.r
-      };
-
-      const attrs = ramda.merge(circle.attrs, baseAttrs);
-      return createElement('circle', attrs, []);
-    }
   }
 
   const warnTypeError = function (fnName) {
@@ -175,8 +255,94 @@
     return createWithProto(circle, {}, r, circle.cx, circle.cy);
   });
 
-  var main = function main() {
-    var root = document.querySelector('#field');
+  const warnNotLineLike = function (fnName, id, item) {
+    warn(`line.${ fnName }: expect a LineLike but got ${ id }:${ item }.`);
+  };
+  const warnInvalidNum$1 = function (fnName, id, item) {
+    warn(`line.${ fnName }: expect a non-NaN number but got ${ id }: ${ item }.`);
+  };
+
+  const moveStartTo = ramda.curry(function (line, x1, y1) {
+    if (!isLineLike(line)) {
+      warnNotLineLike('moveStartTo', 'line', line);
+      return line;
+    } else if (!isValidNumber(x1)) {
+      warnInvalidNum$1('moveStartTo', 'x1', x1);
+      return line;
+    } else if (!isValidNumber(y1)) {
+      warnInvalidNum$1('moveStartTo', 'y1', y1);
+    }
+    return createWithProto$1(line, {}, x1, y1, line.x2, line.y2);
+  });
+
+  const moveEndTo = ramda.curry(function (line, x2, y2) {
+    if (!isLineLike(line)) {
+      warnNotLineLike('moveEndTo', 'line', line);
+      return line;
+    } else if (!isValidNumber(x2)) {
+      warnInvalidNum$1('moveEndTo', 'x2', x2);
+      return line;
+    } else if (!isValidNumber(y2)) {
+      warnInvalidNum$1('moveEndTo', 'y2', y2);
+    }
+    return createWithProto$1(line, {}, line.x1, line.y1, x2, y2);
+  });
+
+  const moveStartBy = ramda.curry(function (line, dx, dy) {
+    if (!isLineLike(line)) {
+      warnNotLineLike('moveStartBy', 'line', line);
+      return line;
+    } else if (!isValidNumber(dx)) {
+      warnInvalidNum$1('moveStartBy', 'x1', dx);
+      return line;
+    } else if (!isValidNumber(dy)) {
+      warnInvalidNum$1('moveStartBy', 'y1', dy);
+    }
+    return moveStartTo(line, line.x1 + dx, line.y1 + dy);
+  });
+
+  const moveEndBy = ramda.curry(function (line, dx, dy) {
+    if (!isLineLike(line)) {
+      warnNotLineLike('moveEndBy', 'line', line);
+      return line;
+    } else if (!isValidNumber(dx)) {
+      warnInvalidNum$1('moveEndBy', 'x2', dx);
+      return line;
+    } else if (!isValidNumber(dy)) {
+      warnInvalidNum$1('moveEndBy', 'y2', dy);
+    }
+    return moveEndTo(line, line.x2 + dx, line.y2 + dy);
+  });
+
+  const rotate = ramda.curry(function (line, deg) {
+    if (!isLineLike(line)) {
+      warnNotLineLike('rotate', 'line', line);
+      return line;
+    } else if (!isValidNumber(deg)) {
+      warnInvalidNum$1('rotate', 'deg', deg);
+      return line;
+    }
+    const deltaAngle = deg / 180 * Math.PI;
+    const l = getLength(line);
+    const orginalAngle = Math.atan((line.x2 - line.x1) / (line.y2 - line.y1));
+    const newAngle = orginalAngle + deltaAngle;
+    const newX = l * Math.sin(newAngle) + line.x1;
+    const newY = l * Math.cos(newAngle) + line.y1;
+
+    return moveEndTo(line, newX, newY);
+  });
+
+  var query = function query(s) {
+    return document.querySelector(s);
+  };
+  var append = ramda.curry(function (root, child) {
+    root.appendChild(child);
+  });
+
+  var drawCircles = function drawCircles() {
+    var root = query('#circles');
+    var render = ramda.compose(createElement, portCircle);
+    var mount = append(root);
 
     var proto = {
       attrs: {
@@ -190,12 +356,38 @@
     var getSmall = getCircle(50);
 
     var big = getBig(0, 0);
-    var small = getSmall(0, 0);
+    var small = getSmall(30, 50);
 
-    root.appendChild(render(big));
-    root.appendChild(render(small));
-    root.appendChild(render(moveTo(big, 200, 200)));
-    root.appendChild(render(moveTo(resize(small, 70), 300, 300)));
+    mount(render(big));
+    mount(render(small));
+    mount(render(moveTo(big, 200, 200)));
+    mount(render(moveBy(resize(small, 70), 300, 300)));
+  };
+
+  var drawLines = function drawLines(params) {
+    var root = query('#lines');
+    var render = ramda.compose(createElement, portLine);
+    var mount = append(root);
+    var draw = ramda.compose(mount, render);
+
+    var proto = {
+      attrs: {
+        stroke: 'green'
+      }
+    };
+
+    var getLineFromLeftTop = createWithProto$1(proto, ramda.__, 0, 0, ramda.__, ramda.__);
+    var shortLineFromLeftTop = getLineFromLeftTop({}, 100, 100);
+    var longerLine = moveEndBy(shortLineFromLeftTop, 300, -50);
+    var notFromLeftTop = moveStartTo(longerLine, 200, 300);
+    var rotatedLine = rotate(notFromLeftTop, -90);
+
+    ramda.forEach(draw)([shortLineFromLeftTop, longerLine, notFromLeftTop, rotatedLine]);
+  };
+
+  var main = function main() {
+    drawCircles();
+    drawLines();
   };
 
   main();
