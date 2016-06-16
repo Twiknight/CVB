@@ -1,7 +1,5 @@
 import {
-  createWithProto,
   create,
-  createDefault,
   isLineLike,
   getLength
 } from './line'
@@ -15,9 +13,7 @@ import {
 } from './operators'
 
 export {
-  createWithProto,
   create,
-  createDefault,
   isLineLike,
   getLength,
   moveStartTo,

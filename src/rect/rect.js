@@ -1,55 +1,48 @@
-import { curry, mergeWithKey, merge, allPass, compose, complement, prop, map } from 'ramda'
-import { Either } from 'ramda-fantasy'
+import { curry, allPass, complement, propSatisfies, map, isNil } from 'ramda'
 import { isValidNumber, isObject } from '../utils/validators'
-import { buildErrorInfo } from '../utils/log'
+import { unSafeShape } from '../utils/object-handlers'
 
 const RECT = 'rect'
 
 const baseAttrs = [ 'x', 'y', 'width', 'height' ]
-const __proto__ = {
-  x: 0,
-  y: 0,
-  width: 0,
-  height: 0
-}
 
-const typeErr = buildErrorInfo(function (fn, pn, pv) {
-  return Either.Left(`Type error: rect.${fn} can not handle param '${pn}':${pv}`)
+const typeErr = curry(function (fn, pn, pv) {
+  return `Type error: rect.${fn} can not handle param '${pn}':${pv}`
 })
 const isInvalidNum = complement(isValidNumber)
 
-const isRectLike = allPass(map(compose(isValidNumber, prop), baseAttrs))
+const isRectLike = function (rect) {
+  const predicates = map(propSatisfies(isValidNumber), baseAttrs)
+  return allPass(predicates)(rect)
+}
 
-const createWithProto = curry(function (proto, attrs, x, y, height, width) {
+const unSafeRect = unSafeShape((x) => !isNil(x) && x.type === RECT)
+
+const create = curry(function (attrs, x, y, height, width) {
   const err = typeErr('createWithProto')
-  if (isRectLike(proto)) {
-    return err('proto', proto)
-  } else if (!isObject(attrs)) {
-    return err('attrs', attrs)
+  if (!isObject(attrs)) {
+    return unSafeRect(err('attrs', attrs))
   } else if (isInvalidNum(x)) {
-    return err('x', x)
+    return unSafeRect(err('x', x))
   } else if (isInvalidNum(y)) {
-    return err('y', y)
+    return unSafeRect(err('y', y))
   } else if (isInvalidNum(height)) {
-    return err('height', height)
+    return unSafeRect(err('height', height))
   } else if (isInvalidNum(width)) {
-    return err('width', width)
+    return unSafeRect(err('width', width))
   }
 
-  return Either.Right(
-    mergeWithKey((key, left, right) => key === 'attrs' ? merge(left, right) : right),
-    proto,
+  return unSafeRect(
     { attrs, x, y, width, height, type: RECT })
 })
 
-const create = createWithProto(__proto__)
-
-const createDefault = create({}, 0, 0, 0, 0)
+// const createDefault = create({}, 0, 0, 0, 0)
+const createDefault = null
 
 export {
-  createWithProto,
   createDefault,
   create,
-  isRectLike
+  isRectLike,
+  unSafeRect
 }
 

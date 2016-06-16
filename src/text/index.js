@@ -1,15 +1,13 @@
 import {
   create
-} from './circle'
+} from './text'
 import {
   moveTo,
-  moveBy,
-  resize
+  moveBy
 } from './operators'
 
 export {
   create,
   moveTo,
-  moveBy,
-  resize
+  moveBy
 }

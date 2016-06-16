@@ -3,7 +3,7 @@ import {
   complement
 } from 'ramda'
 
-import { isCircleLike, createWithProto } from './circle'
+import { isCircleLike, create } from './circle'
 import { warn } from '../utils/log'
 import { isValidNumber } from '../utils/validators'
 
@@ -42,7 +42,7 @@ const moveTo = curry(function (circle, cx, cy) {
     return circle
   }
 
-  return createWithProto(circle, {}, circle.r, cx, cy)
+  return create(circle.attrs, circle.r, cx, cy)
 })
 
 const moveBy = curry(function (circle, dx, dy) {
@@ -59,7 +59,7 @@ const moveBy = curry(function (circle, dx, dy) {
     return circle
   }
 
-  return createWithProto(circle, {}, circle.r, dx + circle.cx, dy + circle.cy)
+  return create(circle.attrs, circle.r, dx + circle.cx, dy + circle.cy)
 })
 
 const resize = curry(function (circle, r) {
@@ -71,7 +71,7 @@ const resize = curry(function (circle, r) {
     warnInvalidNum('resize', 'r', r)
   }
 
-  return createWithProto(circle, {}, r, circle.cx, circle.cy)
+  return create(circle.attrs, r, circle.cx, circle.cy)
 })
 
 export {

@@ -1,6 +1,6 @@
 import { curry } from 'ramda'
 import {
-  createWithProto,
+  create,
   isLineLike,
   getLength
 } from './line'
@@ -24,7 +24,7 @@ const moveStartTo = curry(function (line, x1, y1) {
   } else if (!isValidNumber(y1)) {
     warnInvalidNum('moveStartTo', 'y1', y1)
   }
-  return createWithProto(line, {}, x1, y1, line.x2, line.y2)
+  return create(line.attrs, x1, y1, line.x2, line.y2)
 })
 
 const moveEndTo = curry(function (line, x2, y2) {
@@ -37,7 +37,7 @@ const moveEndTo = curry(function (line, x2, y2) {
   } else if (!isValidNumber(y2)) {
     warnInvalidNum('moveEndTo', 'y2', y2)
   }
-  return createWithProto(line, {}, line.x1, line.y1, x2, y2)
+  return create(line.attrs, line.x1, line.y1, x2, y2)
 })
 
 const moveStartBy = curry(function (line, dx, dy) {
@@ -89,7 +89,7 @@ const reverse = function (line) {
     warnNotLineLike('reverse', 'line', line)
     return line
   }
-  return createWithProto(line, {}, line.x2, line.y2, line.x1, line.y1)
+  return create(line.attrs, line.x2, line.y2, line.x1, line.y1)
 }
 
 export {

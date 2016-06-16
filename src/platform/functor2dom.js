@@ -1,11 +1,8 @@
 import { forEach, toPairs } from 'ramda'
+import { fmap } from '../utils/either
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 
 export default function createElement (node) {
-  if (typeof node === 'string') {
-    return document.createTextNode(node)
-  }
-
   const {tag, attrs, children} = node
   // create element
   let elm = document.createElementNS(SVG_NAMESPACE, tag)
