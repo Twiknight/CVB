@@ -1,759 +1,856 @@
 (function (ramda) {
   'use strict';
 
-  const isLeft = function (x) {
-    if (ramda.isNil(x)) {
-      return false;
-    } else if (x.type === 'either-left') {
-      return true;
-    } else {
-      return false;
+  var babelHelpers = {};
+  babelHelpers.typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
+    return typeof obj;
+  } : function (obj) {
+    return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj;
+  };
+
+  babelHelpers.classCallCheck = function (instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
     }
   };
 
-  const isRight = function (x) {
-    if (ramda.isNil(x)) {
-      return false;
-    } else if (x.type === 'either-right') {
-      return true;
-    } else {
-      return false;
+  babelHelpers.createClass = function () {
+    function defineProperties(target, props) {
+      for (var i = 0; i < props.length; i++) {
+        var descriptor = props[i];
+        descriptor.enumerable = descriptor.enumerable || false;
+        descriptor.configurable = true;
+        if ("value" in descriptor) descriptor.writable = true;
+        Object.defineProperty(target, descriptor.key, descriptor);
+      }
     }
+
+    return function (Constructor, protoProps, staticProps) {
+      if (protoProps) defineProperties(Constructor.prototype, protoProps);
+      if (staticProps) defineProperties(Constructor, staticProps);
+      return Constructor;
+    };
+  }();
+
+  babelHelpers.inherits = function (subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) {
+      throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+    }
+
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
   };
 
-  const left = function (value) {
-    const lp = { type: 'either-left' };
-    const l = Object.create(lp);
-    return ramda.assoc('__value', value, l);
+  babelHelpers.possibleConstructorReturn = function (self, call) {
+    if (!self) {
+      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+    }
+
+    return call && (typeof call === "object" || typeof call === "function") ? call : self;
   };
 
-  const right = function (value) {
-    const rp = { type: 'either-right' };
-    const r = Object.create(rp);
-    return ramda.assoc('__value', value, r);
-  };
+  babelHelpers.slicedToArray = function () {
+    function sliceIterator(arr, i) {
+      var _arr = [];
+      var _n = true;
+      var _d = false;
+      var _e = undefined;
 
-  const either = ramda.curry(function (fl, fr) {
-    return function (value) {
-      if (fl(value)) {
-        return left(value);
-      } else if (fr) {
-        return right(value);
+      try {
+        for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+          _arr.push(_s.value);
+
+          if (i && _arr.length === i) break;
+        }
+      } catch (err) {
+        _d = true;
+        _e = err;
+      } finally {
+        try {
+          if (!_n && _i["return"]) _i["return"]();
+        } finally {
+          if (_d) throw _e;
+        }
+      }
+
+      return _arr;
+    }
+
+    return function (arr, i) {
+      if (Array.isArray(arr)) {
+        return arr;
+      } else if (Symbol.iterator in Object(arr)) {
+        return sliceIterator(arr, i);
       } else {
-        const msg = `either: the passed in param ${ value } seems to fit neither condition`;
-        return left(msg);
+        throw new TypeError("Invalid attempt to destructure non-iterable instance");
       }
     };
+  }();
+
+  babelHelpers.toConsumableArray = function (arr) {
+    if (Array.isArray(arr)) {
+      for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+      return arr2;
+    } else {
+      return Array.from(arr);
+    }
+  };
+
+  babelHelpers;
+
+  var isFunction = function isFunction(x) {
+    return ramda.type(x) === 'Function';
+  };
+
+  var isNumber = function isNumber(x) {
+    return ramda.is(Number, x) && !isNaN(x);
+  };
+
+  var typeErrorMsg = ramda.curry(function (fn, value, type) {
+    return fn + ': ' + value + ' is not ' + type + '.';
   });
 
-  const fmap = function (f) {
-    return function (x) {
-      if (isLeft(x)) {
-        return x;
-      } else if (isRight(x)) {
-        return right(f(x.__value));
-      } else {
-        const msg = `fmap only works on either type, but got ${ x }`;
-        return left(msg);
+  var Left = function () {
+    function Left(x) {
+      babelHelpers.classCallCheck(this, Left);
+
+      this.__value = x;
+    }
+
+    babelHelpers.createClass(Left, [{
+      key: 'map',
+      value: function map(f) {
+        return this;
       }
-    };
+    }, {
+      key: 'join',
+      value: function join(f) {
+        return this;
+      }
+    }, {
+      key: 'bnd',
+      value: function bnd(f) {
+        return this;
+      }
+    }]);
+    return Left;
+  }();
+
+  // a -> Bool
+
+
+  var isLeft = ramda.is(Left);
+
+  var toLeft = function toLeft(x) {
+    return new Left(x);
   };
 
-  const chain = function (f) {
-    return function (x) {
-      return f(x.__value);
-    };
-  };
+  var Right = function () {
+    function Right(x) {
+      babelHelpers.classCallCheck(this, Right);
 
-  const areEqual = ramda.curry(function (e1, e2) {
-    return ramda.equals(e1, e2);
-  });
-
-  const isValidNumber = function (x) {
-    return typeof x === 'number' && !isNaN(x);
-  };
-
-  const isObject = function (x) {
-    return typeof x === 'object';
-  };
-
-  const warn = function (s) {
-    console.warn(s);
-  };
-
-  const buildErrorInfo = ramda.curry((tmplFn, FnName, paramName, paramValue) => {
-    return tmplFn(FnName, paramName, paramValue);
-  });
-
-  const log = function (unsafeShape) {
-    if (isLeft(unsafeShape)) {
-      console.log(unsafeShape.__value);
-    }
-    return unsafeShape;
-  };
-
-  /**
-  * check if an item can be render to a svg circle element
-  * @param {Object} obj - the item to be checked
-  * @return {Boolean} - `true` if obj is a circleLike; `false` otherwise
-  */
-  const isCircleLike = function (obj) {
-    const checkItems = ['cx', 'cy', 'r'];
-    const predicates = ramda.map(ramda.propSatisfies(isValidNumber), checkItems);
-    return ramda.allPass(predicates)(obj);
-  };
-
-  /**
-  * curried function for creating a circle
-  * @param {Number} r - radius in pixel
-  * @param {Number} cx - x value of the center
-  * @param {Number} cy - y value of the center
-  * @return {CircleLike} a circle-like structure
-  */
-  const create = ramda.curry(function (attrs, r, cx, cy) {
-    if (!isObject(attrs)) {
-      warn('circle.createWithProto: Invalid attributes for your circle!');
+      this.__value = x;
     }
 
-    return {
-      type: 'circle',
-      cx: isValidNumber(cx) ? cx : 0,
-      cy: isValidNumber(cy) ? cy : 0,
-      r: isValidNumber(r) ? r : 0,
-      attrs: isObject(attrs) ? attrs : {}
-    };
-  });
+    babelHelpers.createClass(Right, [{
+      key: 'map',
+      value: function map(f) {
+        return new Right(f(this.__value));
+      }
+    }, {
+      key: 'join',
+      value: function join(f) {
+        return this.__value.map(f);
+      }
+    }, {
+      key: 'bnd',
+      value: function bnd(f) {
+        return f(this.__value);
+      }
+    }]);
+    return Right;
+  }();
 
-  const isCircle = ramda.allPass([isCircleLike, ramda.propEq('type', 'circle')]);
-  const isNotCircle = ramda.complement(isCircle);
+  // a -> Bool
 
-  const warnNotCircle = function (type) {
-    warn(`Render.circle: expects to accept a Circle but got ${ type }`);
+
+  var isRight = ramda.is(Right);
+
+  // a -> Right a
+  var toRight = function toRight(x) {
+    return new Right(x);
   };
 
-  function portCircle (circle) {
-    if (isNotCircle(circle)) {
-      warnNotCircle(circle.type);
+  // (a -> b) -> M a -> M b
+  var fmap = ramda.curry(function (f, x) {
+    if (!isFunction(f)) {
+      return new Left('Either.map: ' + f + ' is not a function!');
+    } else if (ramda.isNil(x) || ramda.isNil(x.map)) {
+      return new Left('Either.map: can not call \'map\' of ' + x + '.');
     } else {
-      const baseAttrs = ramda.omit(['type', 'attrs'], circle);
-
-      const attrs = ramda.merge(circle.attrs, baseAttrs);
-      return {
-        tag: 'circle',
-        attrs,
-        children: []
-      };
+      return x.map(f);
     }
-  }
-
-  const fallback = ramda.curry((fn, value, defaultValue) => fn(value) ? value : defaultValue);
-
-  const isLineLike = function (obj) {
-    const checkItems = ['x1', 'x2', 'y1', 'y2'];
-    const predicates = ramda.map(ramda.propSatisfies(isValidNumber), checkItems);
-    return ramda.allPass(predicates)(obj);
-  };
-
-  const create$1 = ramda.curry(function (attrs, x1, y1, x2, y2) {
-    const fallbackNumberToZero = fallback(isValidNumber, ramda.__, 0);
-    const _attrs = fallback(isObject, attrs, {});
-
-    return ramda.merge({ attrs: _attrs, type: 'line' }, ramda.map(fallbackNumberToZero, { x1, y1, x2, y2 }));
   });
 
-  const getLength = function (line) {
-    if (!isLineLike(line)) {
-      warn(`line.getLength: cannot calculate length of non-LineLike ${ line }`);
-      return NaN;
-    }
-    return Math.sqrt(Math.pow(line.x1 - line.x2, 2) + Math.pow(line.y1 - line.y2, 2));
-  };
-
-  const isLine = ramda.allPass([isLineLike, ramda.propEq('type', 'line')]);
-  const isNotLine = ramda.complement(isLine);
-
-  const warnNotLine = function (obj) {
-    warn(`Render.line: can't render a non-line object ${ obj }`);
-  };
-
-  function portLine (line) {
-    if (isNotLine(line)) {
-      warnNotLine(line);
+  // (a -> b) -> M (M a) -> M b
+  var join$1 = ramda.curry(function (f, x) {
+    if (!isFunction(f)) {
+      return new Left('Either.join: ' + f + ' is not a function!');
+    } else if (ramda.isNil(x) || ramda.isNil(x.join)) {
+      return new Left('Either.join: can not call \'join\' of ' + x + '.');
     } else {
-      const baseAttrs = ramda.omit(['type', 'attrs'], line);
-      return {
-        tag: 'line',
-        attrs: ramda.merge(line.attrs, baseAttrs),
-        children: []
-      };
+      return x.join(f);
     }
-  }
-
-  function portRect (rect) {
-    return fmap(rect => {
-      return {
-        tag: rect.type,
-        attrs: ramda.merge(rect.attrs, {
-          x: rect.x,
-          y: rect.y,
-          width: rect.width,
-          height: rect.height
-        }),
-        children: []
-      };
-    })(rect);
-  }
-
-  const toString = p => `${ p.x },${ p.y }`;
-
-  const port = fmap(function (pl) {
-    const points = ramda.join(' ')(ramda.map(chain(toString), pl.points));
-
-    return {
-      tag: pl.type,
-      attrs: ramda.merge(pl.attrs, { points }),
-      children: []
-    };
   });
 
-  function portText (text) {
-    return fmap(function (t) {
-      return {
-        tag: t.type,
-        attrs: ramda.merge(t.attrs, {
-          x: t.x,
-          y: t.y
-        }),
-        children: ramda.map(function (span) {
-          return {
-            tag: span.type,
-            attrs: span.attrs,
-            children: [span.textContent]
-          };
-        })(t.children || [])
-      };
+  var bnd = ramda.curry(function (f, m) {
+    if (!ramda.is(Function, f)) {
+      return toLeft(typeErrorMsg('Either.bnd', f, 'Function'));
+    } else if (ramda.isNil(m) || !ramda.is(Function, m.bnd)) {
+      return toLeft('Either.bnd: can not call bnd of ' + m);
+    } else {
+      return m.bnd(f);
+    }
+  });
+
+  var isEither = function isEither(_) {
+    return isLeft(_) || isRight(_);
+  };
+
+  var VNode = function VNode(tag, attrs, children) {
+    babelHelpers.classCallCheck(this, VNode);
+
+    this.tag = tag;
+    this.attrs = attrs;
+    this.children = children;
+  };
+
+  var VText = function () {
+    function VText(t) {
+      babelHelpers.classCallCheck(this, VText);
+
+      this.__text = t;
+    }
+
+    babelHelpers.createClass(VText, [{
+      key: "content",
+      get: function get() {
+        return this.__text;
+      }
+    }]);
+    return VText;
+  }();
+
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+
+  var log = function log(x) {
+    console.log(x);
+    return x;
+  };
+
+  var $elm = function $elm(_) {
+    return document.createElementNS(SVG_NS, _);
+  };
+  var $text = function $text(_) {
+    return document.createTextNode(_.content);
+  };
+
+  var $create = function create(x) {
+    if (ramda.is(VText, x)) {
+      return $text(x);
+    } else {
+      var _ret = function () {
+        var tag = x.tag;
+        var attrs = x.attrs;
+        var children = x.children;
+        var elm = $elm(tag);
+
+        ramda.forEach(function (_ref) {
+          var _ref2 = babelHelpers.slicedToArray(_ref, 2);
+
+          var n = _ref2[0];
+          var v = _ref2[1];
+
+          elm.setAttribute(n, v);
+        })(ramda.toPairs(attrs));
+
+        ramda.forEach(function (c) {
+          elm.appendChild(create(c));
+        })(children);
+
+        return {
+          v: elm
+        };
+      }();
+
+      if ((typeof _ret === 'undefined' ? 'undefined' : babelHelpers.typeof(_ret)) === "object") return _ret.v;
+    }
+  };
+
+  var createElement = bnd(function (_) {
+    var msg = typeErrorMsg('dom.createElement');
+    if (!ramda.is(VNode, _)) {
+      return toLeft(msg(_, 'VNode'));
+    } else {
+      return toRight($create(_));
+    }
+  });
+
+  var mount = ramda.curry(function (root, elm) {
+    if (isLeft(elm)) {
+      return log(elm);
+    } else {
+      return fmap(function (elm) {
+        root.appendChild(elm);
+        return root;
+      })(elm);
+    }
+  });
+
+  var Shape = function () {
+    function Shape(attrs) {
+      babelHelpers.classCallCheck(this, Shape);
+
+      this.attrs = attrs;
+    }
+
+    babelHelpers.createClass(Shape, [{
+      key: 'moveBy',
+      value: function moveBy(x, y) {
+        return this;
+      }
+    }, {
+      key: 'setAttr',
+      value: function setAttr(name, value) {
+        return ramda.assocPath(['attrs', name], value, this);
+      }
+    }]);
+    return Shape;
+  }();
+
+  var LINEHEIGHT = 1.2;
+
+  var Span = function () {
+    function Span(attrs, text) {
+      babelHelpers.classCallCheck(this, Span);
+
+      this.attrs = attrs;
+      this.children = [text];
+    }
+
+    babelHelpers.createClass(Span, [{
+      key: 'port',
+      value: function port() {
+        var $children = ramda.map(function (_) {
+          return new VText(_);
+        })(this.children);
+        return new VNode('tspan', this.attrs, $children);
+      }
+    }]);
+    return Span;
+  }();
+
+  var Text = function (_Shape) {
+    babelHelpers.inherits(Text, _Shape);
+
+    function Text(attrs, x, y, text) {
+      babelHelpers.classCallCheck(this, Text);
+
+      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(Text).call(this, attrs));
+
+      var texts = ramda.split('\n', text);
+      _this.x = x;
+      _this.y = y;
+      _this.children = ramda.addIndex(ramda.map)(function (t, idx) {
+        return new Span({
+          x: x,
+          dy: LINEHEIGHT * idx + 'em'
+        }, t);
+      })(texts);
+      _this.$content = text;
+      return _this;
+    }
+
+    babelHelpers.createClass(Text, [{
+      key: 'moveTo',
+      value: function moveTo(x, y) {
+        return new Text(this.attrs, x, y, this.$content);
+      }
+    }, {
+      key: 'moveBy',
+      value: function moveBy(dx, dy) {
+        return new Text(this.attrs, this.x + dx, this.y + dy, this.$content);
+      }
+    }, {
+      key: 'setAttr',
+      value: function setAttr(name, value) {
+        if (name === 'x') {
+          return new Text(this.attrs, value, this.y, this.$content);
+        } else if (name === 'y') {
+          return new Text(this.attrs, this.x, value, this.$content);
+        } else if (ramda.isNil(value)) {
+          return new Text(ramda.dissoc(name, this.attrs), this.x, this.y, this.content);
+        } else {
+          return new Text(ramda.assoc(name, value, this.attrs), this.x, this.y, this.content);
+        }
+      }
+    }, {
+      key: 'port',
+      value: function port() {
+        var $attrs = ramda.merge(this.attrs, { x: this.x, y: this.y });
+        var $children = ramda.map(function (x) {
+          return x.port();
+        })(this.children);
+
+        return new VNode('text', $attrs, $children);
+      }
+    }, {
+      key: 'content',
+      get: function get() {
+        return this.$content || '';
+      }
+    }]);
+    return Text;
+  }(Shape);
+
+  // Object -> Number -> Number -> String -> Either (String Text)
+
+
+  var create = ramda.curry(function (attrs, x, y, text) {
+    var msg = typeErrorMsg('Text.unit');
+    if (!ramda.is(Object, attrs)) {
+      return toLeft(msg(attrs, 'Object'));
+    } else if (!isNumber(x)) {
+      return toLeft(msg(x, 'Number'));
+    } else if (!isNumber(x)) {
+      return toLeft(msg(y, 'Number'));
+    } else if (!ramda.is(String, text)) {
+      return toLeft(msg(text, 'String'));
+    } else {
+      return toRight(new Text(attrs, x, y, text));
+    }
+  });
+
+  // Either (String Text) -> Number -> Number -> Either (String Text)
+  var moveTo = ramda.curry(function (t, x, y) {
+    var msg = typeErrorMsg('Text.moveTo');
+    if (!isNumber(x)) {
+      return toLeft(msg(x, 'Number'));
+    } else if (!isNumber(y)) {
+      return toLeft(msg(x, 'Number'));
+    } else {
+      return bnd(function (text) {
+        if (!ramda.is(Text, text)) {
+          return toLeft(msg(text, 'Text'));
+        } else {
+          return toRight(t.moveTo(x, y));
+        }
+      })(t);
+    }
+  });
+
+  // Either(String Text) -> Number -> Number -> Either
+  var moveBy = ramda.curry(function (t, x, y) {
+    var msg = typeErrorMsg('Text.moveBy');
+    if (!isNumber(x)) {
+      return toLeft(msg(x, 'Number'));
+    } else if (!isNumber(y)) {
+      return toLeft(msg(x, 'Number'));
+    } else {
+      return bnd(function (text) {
+        if (!ramda.is(Text, text)) {
+          return toLeft(msg(text, 'Text'));
+        } else {
+          return toRight(t.moveTo(text.x + x, text.y + y));
+        }
+      })(t);
+    }
+  });
+
+  var set = ramda.curry(function (name, value, text) {
+    var msg = typeErrorMsg('Text.set');
+    if (!ramda.is(String, name)) {
+      return toLeft(msg(name, 'String'));
+    } else {
+      return bnd(function (t) {
+        if (!ramda.is(Text, t)) {
+          return toLeft(msg(text, 'Text'));
+        } else {
+          return toRight(t.setAttr(name, value));
+        }
+      })(text);
+    }
+  });
+
+  var port = function port(text) {
+    var msg = typeErrorMsg('Text.port', ramda.__, 'Text');
+    return bnd(function (_) {
+      if (!ramda.is(Text, _)) {
+        return toLeft(msg(text));
+      } else {
+        return toRight(_.port());
+      }
     })(text);
-  }
-
-  const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
-
-  function createElement(node) {
-    if (typeof node === 'string') {
-      return document.createTextNode(node);
-    }
-
-    const { tag, attrs, children } = node;
-    // create element
-    let elm = document.createElementNS(SVG_NAMESPACE, tag);
-
-    // copy attributes
-    const attrList = ramda.toPairs(attrs);
-    const setAttr = function (kv) {
-      const key = kv[0];
-      const value = kv[1];
-      elm.setAttribute(key, value);
-    };
-    ramda.forEach(setAttr, attrList);
-
-    // append children
-    const append = function (child) {
-      elm.appendChild(createElement(child));
-    };
-    ramda.forEach(append, children);
-
-    return elm;
-  }
-
-  const warnTypeError = function (fnName) {
-    const msg = `typeError: circle.${ fnName } works only on circle-like objects.`;
-    warn(msg);
   };
 
-  const warnInvalidNum = ramda.curry(function (fnName, id, value) {
-    const msg = `typeError: circle.${ fnName } expects param ${ id } to be non-NaN number but got ${ value }.`;
-    warn(msg);
-  });
+  var Polyline = function (_Shape) {
+    babelHelpers.inherits(Polyline, _Shape);
 
-  const isInvalidNumber = ramda.complement(isValidNumber);
+    function Polyline(attrs, points) {
+      babelHelpers.classCallCheck(this, Polyline);
 
-  /**
-  * Copy a circle and move the copy to given position.
-  * If the passed in object is not a `CircleLike`, it will return the original object.
-  * @param {CircleLike} circle - A circle-like object
-  * @param {Number} cx - the new center x postion
-  * @param {Number} cy - the new center y position
-  * @return {CircleLike | *} a new circle or the original object
-  */
-  const moveTo = ramda.curry(function (circle, cx, cy) {
-    if (!isCircleLike(circle)) {
-      warnTypeError('moveTo');
-      return circle;
-    }
-    if (isInvalidNumber(cx)) {
-      warnInvalidNum('moveTo', 'cx', cx);
-      return circle;
-    }
-    if (isInvalidNumber(cy)) {
-      warnInvalidNum('moveTo', 'cy', cy);
-      return circle;
+      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(Polyline).call(this, attrs));
+
+      _this.$points = points;
+      _this.children = [];
+      return _this;
     }
 
-    return create(circle.attrs, circle.r, cx, cy);
-  });
+    babelHelpers.createClass(Polyline, [{
+      key: 'moveBy',
+      value: function moveBy(dx, dy) {
+        var movePoint = ramda.curry(function (_x, _y, _ref) {
+          var _ref2 = babelHelpers.slicedToArray(_ref, 2);
 
-  const moveBy = ramda.curry(function (circle, dx, dy) {
-    if (!isCircleLike(circle)) {
-      warnTypeError('moveTo');
-      return circle;
-    }
-    if (isInvalidNumber(dx)) {
-      warnInvalidNum('moveBy', 'dx', dx);
-      return circle;
-    }
-    if (isInvalidNumber(dy)) {
-      warnInvalidNum('moveTo', 'dy', dy);
-      return circle;
-    }
-
-    return create(circle.attrs, circle.r, dx + circle.cx, dy + circle.cy);
-  });
-
-  const resize = ramda.curry(function (circle, r) {
-    if (!isCircleLike(circle)) {
-      warnTypeError('resize');
-      return circle;
-    }
-    if (isInvalidNumber(r)) {
-      warnInvalidNum('resize', 'r', r);
-    }
-
-    return create(circle.attrs, r, circle.cx, circle.cy);
-  });
-
-  const warnNotLineLike = function (fnName, id, item) {
-    warn(`line.${ fnName }: expect a LineLike but got ${ id }:${ item }.`);
-  };
-  const warnInvalidNum$1 = function (fnName, id, item) {
-    warn(`line.${ fnName }: expect a non-NaN number but got ${ id }: ${ item }.`);
-  };
-
-  const moveStartTo = ramda.curry(function (line, x1, y1) {
-    if (!isLineLike(line)) {
-      warnNotLineLike('moveStartTo', 'line', line);
-      return line;
-    } else if (!isValidNumber(x1)) {
-      warnInvalidNum$1('moveStartTo', 'x1', x1);
-      return line;
-    } else if (!isValidNumber(y1)) {
-      warnInvalidNum$1('moveStartTo', 'y1', y1);
-    }
-    return create$1(line.attrs, x1, y1, line.x2, line.y2);
-  });
-
-  const moveEndTo = ramda.curry(function (line, x2, y2) {
-    if (!isLineLike(line)) {
-      warnNotLineLike('moveEndTo', 'line', line);
-      return line;
-    } else if (!isValidNumber(x2)) {
-      warnInvalidNum$1('moveEndTo', 'x2', x2);
-      return line;
-    } else if (!isValidNumber(y2)) {
-      warnInvalidNum$1('moveEndTo', 'y2', y2);
-    }
-    return create$1(line.attrs, line.x1, line.y1, x2, y2);
-  });
-
-  const moveStartBy = ramda.curry(function (line, dx, dy) {
-    if (!isLineLike(line)) {
-      warnNotLineLike('moveStartBy', 'line', line);
-      return line;
-    } else if (!isValidNumber(dx)) {
-      warnInvalidNum$1('moveStartBy', 'x1', dx);
-      return line;
-    } else if (!isValidNumber(dy)) {
-      warnInvalidNum$1('moveStartBy', 'y1', dy);
-    }
-    return moveStartTo(line, line.x1 + dx, line.y1 + dy);
-  });
-
-  const moveEndBy = ramda.curry(function (line, dx, dy) {
-    if (!isLineLike(line)) {
-      warnNotLineLike('moveEndBy', 'line', line);
-      return line;
-    } else if (!isValidNumber(dx)) {
-      warnInvalidNum$1('moveEndBy', 'x2', dx);
-      return line;
-    } else if (!isValidNumber(dy)) {
-      warnInvalidNum$1('moveEndBy', 'y2', dy);
-    }
-    return moveEndTo(line, line.x2 + dx, line.y2 + dy);
-  });
-
-  const rotate = ramda.curry(function (line, deg) {
-    if (!isLineLike(line)) {
-      warnNotLineLike('rotate', 'line', line);
-      return line;
-    } else if (!isValidNumber(deg)) {
-      warnInvalidNum$1('rotate', 'deg', deg);
-      return line;
-    }
-    const deltaAngle = deg / 180 * Math.PI;
-    const l = getLength(line);
-    const orginalAngle = Math.atan((line.x2 - line.x1) / (line.y2 - line.y1));
-    const newAngle = orginalAngle + deltaAngle;
-    const newX = l * Math.sin(newAngle) + line.x1;
-    const newY = l * Math.cos(newAngle) + line.y1;
-
-    return moveEndTo(line, newX, newY);
-  });
-
-  const unSafeShape = either(x => typeof x === 'string');
-
-  const RECT = 'rect';
-
-  const typeErr = ramda.curry(function (fn, pn, pv) {
-    return `Type error: rect.${ fn } can not handle param '${ pn }':${ pv }`;
-  });
-  const isInvalidNum = ramda.complement(isValidNumber);
-
-  const unSafeRect = unSafeShape(x => !ramda.isNil(x) && x.type === RECT);
-
-  const create$2 = ramda.curry(function (attrs, x, y, height, width) {
-    const err = typeErr('createWithProto');
-    if (!isObject(attrs)) {
-      return unSafeRect(err('attrs', attrs));
-    } else if (isInvalidNum(x)) {
-      return unSafeRect(err('x', x));
-    } else if (isInvalidNum(y)) {
-      return unSafeRect(err('y', y));
-    } else if (isInvalidNum(height)) {
-      return unSafeRect(err('height', height));
-    } else if (isInvalidNum(width)) {
-      return unSafeRect(err('width', width));
-    }
-
-    return unSafeRect({ attrs, x, y, width, height, type: RECT });
-  });
-
-  const typeErr$1 = buildErrorInfo(function (fn, pn, pv) {
-    return `Type error: rect.${ fn } can not handle param '${ pn }':${ pv }`;
-  });
-
-  const moveTo$1 = ramda.curry(function (rect, x, y) {
-    const err = typeErr$1('moveTo');
-    const f = function (r) {
-      if (!isValidNumber(x)) {
-        return err('x', x);
-      } else if (!isValidNumber(y)) {
-        return err('y', y);
+          var x = _ref2[0];
+          var y = _ref2[1];
+          return [x + _x, y + _y];
+        });
+        return new Polyline(this.attrs, ramda.map(movePoint(dx, dy))(this.points));
       }
-      return ramda.merge(r, { x, y });
-    };
-
-    return fmap(f)(rect);
-  });
-
-  const moveBy$1 = ramda.curry(function (rect, x, y) {
-    const err = typeErr$1('moveBy');
-    const f = function (r) {
-      if (!isValidNumber(x)) {
-        return err('x', x);
-      } else if (!isValidNumber(y)) {
-        return err('y', y);
+    }, {
+      key: 'moveTo',
+      value: function moveTo(x, y) {
+        if (this.points.length < 1) {
+          return this;
+        } else {
+          var p = this.points[0];
+          var dx = x - p[0];
+          var dy = y - p[0];
+          return this.moveBy(dx, dy);
+        }
       }
-      return ramda.mergeWith(ramda.add, r, { x, y });
-    };
-    return fmap(f)(rect);
-  });
-
-  const resize$1 = ramda.curry(function (rect, height, width) {
-    const err = typeErr$1('resize');
-    const f = function (r) {
-      if (!isValidNumber(height)) {
-        return err('height', height);
-      } else if (!isValidNumber(width)) {
-        return err('width', width);
+    }, {
+      key: 'append',
+      value: function append(x, y) {
+        return new Polyline(this.attrs, ramda.append([x, y], this.points));
       }
-      return ramda.merge(r, { height, width });
-    };
-    return fmap(f)(rect);
-  });
+    }, {
+      key: 'remove',
+      value: function remove(x, y) {
+        var shouldNotRemove = function shouldNotRemove(_ref3) {
+          var _ref4 = babelHelpers.slicedToArray(_ref3, 2);
 
-  const unSafePoint = unSafeShape(x => true);
+          var a = _ref4[0];
+          var b = _ref4[1];
+          return !(a === x && b === y);
+        };
+        return new Polyline(this.attrs, ramda.filter(shouldNotRemove)(this.points));
+      }
+    }, {
+      key: 'setAttr',
+      value: function setAttr(name, value) {
+        if (name === 'points') {
+          return new Polyline(this.attrs, value);
+        } else {
+          var $attrs = ramda.assoc(name, value, this.attrs);
+          return new Polyline($attrs, this.points);
+        }
+      }
+    }, {
+      key: 'port',
+      value: function port() {
+        var $pStrs = ramda.map(function (x) {
+          return x[0] + ',' + x[1];
+        })(this.points);
+        var $points = ramda.join(' ', $pStrs);
+        var $attrs = ramda.assoc('points', $points, this.attrs);
+        return new VNode('polyline', $attrs, []);
+      }
+    }, {
+      key: 'points',
+      get: function get() {
+        return this.$points;
+      }
+    }]);
+    return Polyline;
+  }(Shape);
 
-  const TYPE_POINT = 'point';
-
-  const point = ramda.curry(function (x, y) {
-    const err = n => `poit: ${ 'x' } should be a number!`;
-    if (!isValidNumber(x)) {
-      return unSafePoint(err(x));
-    } else if (!isValidNumber(y)) {
-      return unSafePoint(err(y));
+  var isPoints = function isPoints(points) {
+    if (!ramda.is(Array, points)) {
+      return false;
     } else {
-      return unSafePoint({ x, y, type: TYPE_POINT });
+      return ramda.reduce(function (acc, p) {
+        if (!acc) {
+          return false;
+        } else if (!ramda.is(Array, p)) {
+          return false;
+        } else if (p.length < 2) {
+          return false;
+        } else if (!isNumber(p[0]) || !isNumber(p[1])) {
+          return false;
+        } else {
+          return true;
+        }
+      })(true, points);
     }
-  });
-
-  const moveBy$3 = ramda.curry(function (pt, x, y) {
-    return chain(p => point(x + p.x, y + p.y))(pt);
-  });
-
-  const isPoint = function (x) {
-    return chain(p => !ramda.isNil(p) && p.type === TYPE_POINT)(x);
   };
 
-  const moveBy$2 = ramda.curry(function (polyline, dx, dy) {
-    return fmap(function (pl) {
-      const newPoints = ramda.map(moveBy$3(ramda.__, dx, dy))(pl.points);
-      return ramda.assoc('points', newPoints, pl);
-    })(polyline);
-  });
-
-  const moveTo$2 = ramda.curry(function (polyline, x, y) {
-    const points = chain(ramda.prop('points'))(polyline);
-    if (points.length > 0) {
-      const sx = chain(ramda.prop('x'))(points[0]);
-      const sy = chain(ramda.prop('y'))(points[0]);
-      const dx = x - sx;
-      const dy = y - sy;
-      return moveBy$2(polyline, dx, dy);
+  // Object -> [[Number]] -> Polyline
+  var create$1 = ramda.curry(function (attrs, points) {
+    var msg = typeErrorMsg('Polyline.create');
+    if (!ramda.is(Object, attrs)) {
+      return toLeft(msg(attrs, 'Object'));
+    } else if (!isPoints(points)) {
+      return toLeft(msg(points, 'Points'));
     } else {
-      return polyline;
+      return toRight(new Polyline(attrs, points));
     }
   });
 
-  const append$2 = ramda.curry(function (polyline, x, y) {
-    const p = point(x, y);
-    if (isPoint(p)) {
-      return fmap(pl => ramda.assoc('points', ramda.append(p, pl.points), pl));
+  var moveTo$1 = ramda.curry(function (x, y, p) {
+    var msg = typeErrorMsg('Polyline.moveTo');
+    if (!isNumber(x)) {
+      return toLeft(msg(x, 'Number'));
+    } else if (!isNumber(y)) {
+      return toLeft(msg(y, 'Number'));
+    } else if (!isEither(p)) {
+      return toLeft(msg(p, 'Right(Polyline)'));
     } else {
-      return p;
+      return bnd(function (_) {
+        if (ramda.is(Polyline, _)) {
+          return toRight(_.moveTo(x, y));
+        } else {
+          return toLeft(msg(p, 'Polyline'));
+        }
+      })(p);
     }
   });
 
-  const prepend$1 = ramda.curry(function (polyline, x, y) {
-    const p = point(x, y);
-    if (isPoint(p)) {
-      return fmap(pl => ramda.assoc('points', ramda.prepend(p, pl.points), pl));
+  var moveBy$1 = ramda.curry(function (dx, dy, p) {
+    var msg = typeErrorMsg('Polyline.moveBy');
+    if (!isNumber(dx)) {
+      return toLeft(msg(dx, 'Number'));
+    } else if (!isNumber(dy)) {
+      return toLeft(msg(dy, 'Number'));
+    } else if (!isEither(p)) {
+      return toLeft(msg(p, 'Right(Polyline)'));
     } else {
-      return p;
+      return bnd(function (_) {
+        if (ramda.is(Polyline, _)) {
+          return toRight(_.moveBy(dx, dy));
+        } else {
+          return toLeft(msg(p, 'Polyline'));
+        }
+      })(p);
     }
   });
 
-  const remove = ramda.curry(function (polyline, x, y) {
-    const p = point(x, y);
-    const shouldKeep = ramda.complement(areEqual(p));
-    return fmap(function (pl) {
-      return ramda.assoc('points', ramda.filter(shouldKeep, pl.points), pl);
-    });
-  });
-
-  const POLYLINE = 'polyline';
-
-  const isPolyline = ramda.allPass([ramda.complement(ramda.isNil), ramda.propSatisfies(x => x === POLYLINE, 'type')]);
-
-  const unsafePolyline = unSafeShape(isPolyline);
-
-  const create$3 = ramda.curry(function (attrs, points) {
-    if (!isObject(attrs)) {
-      return unsafePolyline(`polyline.create:
-      attrs: ${ attrs } is not a valid object.`);
-    } else if (!ramda.allPass([ramda.isArrayLike, ramda.all(isPoint)])) {
-      return unsafePolyline(`polyline.create:
-      ${ points } is not a valid point array`);
-    }
-
-    return unsafePolyline({
-      type: POLYLINE,
-      points,
-      attrs
-    });
-  });
-
-  const TSPAN = 'tspan';
-  const TEXT = 'text';
-
-  const unsafeTextspan = unSafeShape(x => !ramda.isNil(x) && x.type === TSPAN);
-  const unsafeText = unSafeShape(x => !ramda.isNil(x) && x.type === TEXT);
-
-  const tspan = ramda.curry(function (attrs, content) {
-    if (!isObject(attrs)) {
-      return unsafeTextspan(`text.tspan: 
-      attrs: ${ attrs } is not a valid object`);
-    } else if (typeof content !== 'string') {
-      return unsafeTextspan(`text.tspan: 
-      content: ${ content } is not a valid string`);
+  var append$1 = ramda.curry(function (x, y, p) {
+    var msg = typeErrorMsg('Polyline.append');
+    if (isNumber(x)) {
+      return toLeft(msg(x, 'Number'));
+    } else if (isNumber(y)) {
+      return toLeft(msg(y, 'Number'));
+    } else if (!isEither(p)) {
+      return toLeft(msg(p, 'Right(Polyline)'));
     } else {
-      return unsafeTextspan({
-        type: TSPAN,
-        attrs,
-        textContent: content
-      });
+      return bnd(function (_) {
+        if (ramda.is(Polyline, _)) {
+          return toRight(_.append(x, y));
+        } else {
+          return toLeft(msg(p, 'Polyline'));
+        }
+      })(p);
     }
   });
 
-  const create$4 = ramda.curry(function (attrs, content, x, y) {
-    if (!isObject(attrs)) {
-      return unsafeTextspan(`text.create: 
-      attrs: ${ attrs } is not a valid object`);
-    } else if (!isValidNumber(x)) {
-      return unsafeTextspan(`text.create: 
-      x: ${ x } is not a valid number`);
-    } else if (!isValidNumber(y)) {
-      return unsafeTextspan(`text.create: 
-      y: ${ y } is not a valid number`);
-    } else if (typeof content !== 'string') {
-      return unsafeTextspan(`text.create: 
-      content: ${ content } is not a valid string`);
+  var remove = ramda.curry(function (x, y, p) {
+    var msg = typeErrorMsg('Polyline.remove');
+    if (isNumber(x)) {
+      return toLeft(msg(x, 'Number'));
+    } else if (isNumber(y)) {
+      return toLeft(msg(y, 'Number'));
+    } else if (!isEither(p)) {
+      return toLeft(msg(p, 'Right(Polyline)'));
     } else {
-      const lines = ramda.split('\n', content);
-      const spans = ramda.addIndex(ramda.map)((v, idx) => tspan({ dy: `${ 1.2 * idx }em`, x: x }, v))(lines);
-      return unsafeText({
-        type: TEXT,
-        attrs: attrs,
-        textContent: '',
-        x,
-        y,
-        children: ramda.map(chain(x => x))(spans)
-      });
+      return bnd(function (_) {
+        if (ramda.is(Polyline, _)) {
+          return toRight(_.remove(x, y));
+        } else {
+          return toLeft(msg(p, 'Polyline'));
+        }
+      })(p);
     }
   });
 
-  const _getText = function (t) {
-    if (t.children && t.children.length > 0) {
-      return ramda.join('\n')(ramda.map(ramda.prop('textContent'), t.children));
+  var G = function (_Shape) {
+    babelHelpers.inherits(G, _Shape);
+
+    function G(attrs, children) {
+      babelHelpers.classCallCheck(this, G);
+
+      var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(G).call(this, attrs));
+
+      _this.children = children;
+      return _this;
+    }
+
+    babelHelpers.createClass(G, [{
+      key: 'moveBy',
+      value: function moveBy(x, y) {
+        var $children = ramda.map(function (_) {
+          return _.moveBy(x, y);
+        })(this.children);
+        return new G(this.attrs, $children);
+      }
+    }, {
+      key: 'setAttr',
+      value: function setAttr(name, value) {
+        var $attrs = ramda.assoc(name, value, this.attrs);
+        return new G($attrs, this.children);
+      }
+    }, {
+      key: 'port',
+      value: function port() {
+        var $children = ramda.map(function (x) {
+          return x.port();
+        })(this.children);
+        return new VNode('g', this.attrs, $children);
+      }
+    }]);
+    return G;
+  }(Shape);
+
+  var create$2 = ramda.curry(function (attrs, children) {
+    var msg = typeErrorMsg('G.create');
+    if (!ramda.is(Object, attrs)) {
+      return toLeft(msg(attrs, 'Object'));
     } else {
-      return t.textContent;
+      var $children = ramda.reduce(function (acc, x) {
+        if (isLeft(acc)) {
+          return acc;
+        } else if (isLeft(x)) {
+          return x;
+        } else {
+          return bnd(function (_) {
+            if (!ramda.is(Shape, _)) {
+              return toLeft(msg(_, 'Shape'));
+            } else {
+              return fmap(ramda.append(_))(acc);
+            }
+          })(x);
+        }
+      })(toRight([]), children);
+
+      return fmap(function (x) {
+        return new G(attrs, x);
+      })($children);
     }
-  };
-
-  const getText = chain(_getText);
-
-  const moveTo$3 = ramda.curry(function (text, x, y) {
-    return chain(t => create$4(t.attrs, _getText(t), x, y))(text);
   });
 
-  const moveBy$4 = ramda.curry(function (text, dx, dy) {
-    return chain(t => create$4(t.attrs, _getText(t), t.x + dx, t.y + dy))(text);
+  var moveBy$2 = ramda.curry(function (x, y, g) {
+    var msg = typeErrorMsg('G.moveBy');
+    if (!isNumber(x)) {
+      return toLeft(msg(x, 'Number'));
+    } else if (!isNumber(y)) {
+      return toLeft(msg(y, 'Number'));
+    } else {
+      return bnd(function (_) {
+        if (!ramda.is(G, _)) {
+          return toLeft(msg(_, 'G'));
+        } else {
+          return toRight(_.moveBy(x, y));
+        }
+      })(g);
+    }
   });
 
-  var query = function query(s) {
-    return document.querySelector(s);
-  };
-  var append$1 = ramda.curry(function (root, child) {
-    root.appendChild(child);
+  var set$2 = ramda.curry(function (name, value, g) {
+    var msg = typeErrorMsg('G.set');
+    if (!ramda.is(String, name)) {
+      return toLeft(msg(name, 'String'));
+    } else {
+      return bnd(function (_) {
+        if (!ramda.is(G, _)) {
+          return toLeft(msg(_, 'G'));
+        } else {
+          return toRight(_.setAttr(name, value));
+        }
+      })(g);
+    }
   });
 
-  var drawCircles = function drawCircles() {
-    var root = query('#circles');
-    var render = ramda.compose(createElement, portCircle);
-    var mount = append$1(root);
-
-    var proto = {
-      stroke: 'red',
-      fill: 'azure'
-    };
-
-    var getCircle = create(proto);
-    var getBig = getCircle(100);
-    var getSmall = getCircle(50);
-
-    var big = getBig(0, 0);
-    var small = getSmall(30, 50);
-
-    mount(render(big));
-    mount(render(small));
-    mount(render(moveTo(big, 200, 200)));
-    mount(render(moveBy(resize(small, 70), 300, 300)));
+  var port$2 = function port(g) {
+    var msg = typeErrorMsg('G.port');
+    return bnd(function (_) {
+      if (!ramda.is(G, _)) {
+        return toLeft(msg(_, 'G'));
+      } else {
+        return toRight(_.port());
+      }
+    })(g);
   };
 
-  var drawLines = function drawLines(params) {
-    var root = query('#lines');
-    var render = ramda.compose(createElement, portLine);
-    var mount = append$1(root);
-    var draw = ramda.compose(mount, render);
+  var mapWithIndex = ramda.addIndex(ramda.map);
 
-    var proto = {
-      stroke: 'green'
-    };
-
-    var getLineFromLeftTop = create$1(proto, 0, 0);
-    var shortLineFromLeftTop = getLineFromLeftTop(100, 100);
-    var longerLine = moveEndBy(shortLineFromLeftTop, 300, -50);
-    var notFromLeftTop = moveStartTo(longerLine, 200, 300);
-    var rotatedLine = rotate(notFromLeftTop, -90);
-
-    ramda.forEach(draw)([shortLineFromLeftTop, longerLine, notFromLeftTop, rotatedLine]);
+  var title = function title(x, y, t) {
+    return create({ 'font-size': '2em' }, x, y, t);
   };
 
-  var drawRects = function drawRects() {
-    var root = query('#rects');
-    var render = ramda.compose(fmap(createElement), log, portRect);
-    var mount = append$1(root);
-    var draw = ramda.compose(mount, ramda.prop('__value'), render);
-
-    var proto = {
-      fill: 'cyan'
-    };
-
-    var createRectLT = create$2(proto, 0, 0);
-    var smallRect = createRectLT(50, 50);
-    var lagerRect = ramda.compose(moveBy$1(ramda.__, 60, 30), resize$1(ramda.__, 100, 100))(smallRect);
-
-    draw(smallRect);
-    draw(lagerRect);
+  var axis = function axis(ux, uy, tags) {
+    var xAxis = create$1({ 'stroke': 'black' }, [[0, 0], [8 * ux, 0]]);
+    var xComments = mapWithIndex(function (_, idx) {
+      return create({ 'text-anchor': 'middle' }, (idx + 1) * ux, 20, _);
+    })(tags);
+    var yAxis = create$1({ 'stroke': 'black' }, [[0, 0], [0, -40 * uy]]);
+    var yComment = create({ 'text-anchor': 'end' }, -0.1 * ux, -30 * uy, '30℃');
+    var auxiliary = create$1({
+      'stroke': 'red',
+      'stroke-dasharray': '5 2'
+    }, [[0, -30 * uy], [8 * ux, -30 * uy]]);
+    var axis = create$2({}, [xAxis, yAxis, auxiliary, yComment].concat(babelHelpers.toConsumableArray(xComments)));
+    return axis;
   };
 
-  var drawPolyline = function drawPolyline() {
-    var root = query('#polyline');
-    var renderPolyline = ramda.compose(fmap(createElement), log, port);
-    var renderText = ramda.compose(fmap(createElement), log, portText);
-    var mount = append$1(root);
-    var draw = ramda.compose(chain(mount));
-
-    var mapWithIdx = ramda.addIndex(ramda.map);
-    var $x = 100;
-
-    var data = [17.5, 18.6, 14.7, 22.9, 24, 23.8, 30.1];
-    var toPoints = mapWithIdx(function (v, idx) {
-      return point(idx * $x, v * -10);
-    });
-    var toTexts = mapWithIdx(function (v, idx) {
-      return create$4({ 'text-anchor': 'middle' }, v + 'pts', idx * $x, v * -10);
-    });
-
-    var title = create$4({
-      'font-size': '2em'
-    }, 'stephen curry points per game', 0, 0);
-
-    var axisStyle = { stroke: 'black' };
-    var axisX = create$3(axisStyle, [point(-20, 0), point($x * 8, 0)]);
-    var axisY = create$3(axisStyle, [point(0, 20), point(0, -200)]);
-    var years = mapWithIdx(function (v, idx) {
-      return create$4({ 'text-anchor': 'middle' }, idx + 2009 + '-' + (idx + 2010), idx * $x, 0);
-    })(data);
-
-    var polyline = create$3({
-      stroke: 'green',
-      fill: 'none'
-    }, toPoints(data));
-    var texts = toTexts(data);
-
-    draw(renderPolyline(moveBy$2(polyline, $x * 2, 400)));
-    ramda.map(ramda.compose(draw, renderText, moveBy$4(ramda.__, $x * 2, 375)), texts);
-    ramda.map(ramda.compose(draw, renderText, moveBy$4(ramda.__, $x * 2, 350)))(years);
-    draw(renderText(moveBy$4(title, 200, 30)));
-    draw(renderPolyline(moveBy$2(axisX, $x, 300)));
-    draw(renderPolyline(moveBy$2(axisY, $x, 300)));
+  var graph = function graph(ux, uy, dataSet) {
+    var dataLine = create$1({
+      'stroke': 'black',
+      'fill': 'none'
+    }, mapWithIndex(function (t, idx) {
+      return [idx * ux, -t * uy];
+    })(dataSet));
+    var dataComments = mapWithIndex(function (_, idx) {
+      return create({ 'text-anchor': 'middle' }, (idx + 1) * ux, -_ * uy + 20, _ + '℃');
+    })(dataSet);
+    return create$2({}, [moveBy$1(ux, 0, dataLine)].concat(babelHelpers.toConsumableArray(dataComments)));
   };
 
-  var main = function main() {
-    drawCircles();
-    drawLines();
-    drawRects();
-    drawPolyline();
+  var drawTemperature = function drawTemperature(temps) {
+    var ux = 80;
+    var uy = 8;
+    var week = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    var root = document.querySelector('#polyline');
+
+    var $title = port(title(175, 50, 'Highest Temperature This Week'));
+    var $axis = port$2(moveBy$2(ux, 50 * uy)(axis(ux, uy, week)));
+    var $data = port$2(moveBy$2(ux, 50 * uy)(graph(ux, uy, temps)));
+
+    mount(root, createElement($title));
+    mount(root, createElement($axis));
+    mount(root, createElement($data));
   };
 
-  main();
+  var highestTemps = [27, 33, 36, 34, 26, 23, 24];
+  drawTemperature(highestTemps);
 
 }(R));
