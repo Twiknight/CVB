@@ -279,7 +279,11 @@
           var n = _ref2[0];
           var v = _ref2[1];
 
-          elm.setAttribute(n, v);
+          if (/^on[\w]+/.test(n) && ramda.is(Function, v)) {
+            elm.addEventListener(ramda.slice(2, n.length), v);
+          } else {
+            elm.setAttribute(n, v);
+          }
         })(ramda.toPairs(attrs));
 
         ramda.forEach(function (c) {
@@ -806,11 +810,11 @@
     return create({ 'font-size': '2em' }, x, y, t);
   };
 
-  var axis = function axis(ux, uy, tags) {
+  var axis = function axis(ux, uy, xtags) {
     var xAxis = create$1({ 'stroke': 'black' }, [[0, 0], [8 * ux, 0]]);
     var xComments = mapWithIndex(function (_, idx) {
       return create({ 'text-anchor': 'middle' }, (idx + 1) * ux, 20, _);
-    })(tags);
+    })(xtags);
     var yAxis = create$1({ 'stroke': 'black' }, [[0, 0], [0, -40 * uy]]);
     var yComment = create({ 'text-anchor': 'end' }, -0.1 * ux, -30 * uy, '30℃');
     var auxiliary = create$1({

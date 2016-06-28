@@ -1,4 +1,4 @@
-import { curry, is, toPairs, forEach } from 'ramda'
+import { curry, is, toPairs, forEach, slice } from 'ramda'
 import { bnd, fmap, toRight, isLeft, toLeft } from '../internals/either'
 import { VNode, VText } from '../internals/vnode'
 import { typeErrorMsg } from '../internals/msgs'
@@ -23,7 +23,11 @@ const $create = function create (x) {
     const elm = $elm(tag)
 
     forEach(function ([n, v]) {
-      elm.setAttribute(n, v)
+      if (/^on[\w]+/.test(n) && is(Function, v)) {
+        elm.addEventListener(slice(2, n.length), v)
+      } else {
+        elm.setAttribute(n, v)
+      }
     })(toPairs(attrs))
 
     forEach(function (c) {
