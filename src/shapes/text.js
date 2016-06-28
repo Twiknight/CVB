@@ -88,7 +88,7 @@ const create = curry(function (attrs, x, y, text) {
 })
 
 // Either (String Text) -> Number -> Number -> Either (String Text)
-const moveTo = curry(function (t, x, y) {
+const moveTo = curry(function (x, y, t) {
   const msg = typeErrorMsg('Text.moveTo')
   if (!isNumber(x)) {
     return toLeft(msg(x, 'Number'))
@@ -106,7 +106,7 @@ const moveTo = curry(function (t, x, y) {
 })
 
 // Either(String Text) -> Number -> Number -> Either
-const moveBy = curry(function (t, x, y) {
+const moveBy = curry(function (x, y, t) {
   const msg = typeErrorMsg('Text.moveBy')
   if (!isNumber(x)) {
     return toLeft(msg(x, 'Number'))

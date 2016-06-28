@@ -444,7 +444,7 @@
   });
 
   // Either (String Text) -> Number -> Number -> Either (String Text)
-  var moveTo = ramda.curry(function (t, x, y) {
+  var moveTo = ramda.curry(function (x, y, t) {
     var msg = typeErrorMsg('Text.moveTo');
     if (!isNumber(x)) {
       return toLeft(msg(x, 'Number'));
@@ -462,7 +462,7 @@
   });
 
   // Either(String Text) -> Number -> Number -> Either
-  var moveBy = ramda.curry(function (t, x, y) {
+  var moveBy = ramda.curry(function (x, y, t) {
     var msg = typeErrorMsg('Text.moveBy');
     if (!isNumber(x)) {
       return toLeft(msg(x, 'Number'));
